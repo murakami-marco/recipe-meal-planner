@@ -3,7 +3,6 @@ const router = express.Router();
 const Recipe = require('./models/recipe');
 const MealPlan = require('./models/meal_plan');
 
-// Middleware to parse JSON bodies
 router.use(express.json());
 
 /*
@@ -31,7 +30,6 @@ router.get('/recipes', async (req, res) => {
     const recipes = await Recipe.getAll(category);
     res.json(recipes);
   } catch (err) {
-    console.error('Error getting recipes:', err);
     res.status(500).json({ error: 'Failed to retrieve recipes' });
   }
 });
@@ -58,7 +56,6 @@ router.get('/recipes/:id', async (req, res) => {
     if (err.message === 'Recipe not found') {
       return res.status(404).json({ error: 'Recipe not found' });
     }
-    console.error('Error getting recipe:', err);
     res.status(500).json({ error: 'Failed to retrieve recipe' });
   }
 });
@@ -91,51 +88,35 @@ Response:
 router.post('/recipes', async (req, res) => {
   try {
     console.log('Received request to create recipe:', req.body);
-    
-    // Basic validation
+
     const { name, category, instructions, ingredients, prep_time } = req.body;
     if (!name || !category || !instructions || !ingredients || prep_time === undefined) {
-      console.error('Validation failed - missing required fields');
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Missing required fields',
-        required: ['name', 'category', 'instructions', 'ingredients', 'prep_time']
+        required: ['name', 'category', 'instructions', 'ingredients', 'prep_time'],
       });
     }
 
-    // Create the recipe
     const recipe = await Recipe.create({
       name,
       category,
       instructions,
       ingredients,
-      prep_time: parseInt(prep_time, 10)
+      prep_time: parseInt(prep_time, 10),
     });
-    
-    console.log('Recipe created successfully:', recipe);
-    
+
     res.status(201).json({
       message: 'Recipe added successfully',
-      recipe
+      recipe,
     });
   } catch (err) {
-    console.error('Error in POST /api/recipes:', err);
-    
-    // Handle specific error cases
     if (err.status === 400) {
       return res.status(400).json({ error: err.message });
     }
-    
-    // SQLite constraint error (e.g., duplicate name)
-    if (err.code === 'SQLITE_CONSTRAINT') {
-      return res.status(409).json({ 
-        error: 'A recipe with this name already exists' 
-      });
-    }
-    
-    // Generic server error
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Failed to create recipe',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined,
     });
   }
 });
@@ -166,18 +147,17 @@ Response:
 router.post('/meal-plans', async (req, res) => {
   try {
     const { name, date, recipe_ids, notes = '' } = req.body;
-    
+
     if (!name || !date || !recipe_ids || !Array.isArray(recipe_ids)) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-    
+
     const mealPlan = await MealPlan.create({ name, date, recipe_ids, notes });
     res.status(201).json({
       message: 'Meal plan created successfully',
-      meal_plan: mealPlan
+      meal_plan: mealPlan,
     });
   } catch (err) {
-    console.error('Error creating meal plan:', err);
     res.status(500).json({ error: 'Failed to create meal plan' });
   }
 });
@@ -203,7 +183,6 @@ router.get('/meal-plans', async (req, res) => {
     const mealPlans = await MealPlan.getAll();
     res.json(mealPlans);
   } catch (err) {
-    console.error('Error getting meal plans:', err);
     res.status(500).json({ error: 'Failed to retrieve meal plans' });
   }
 });
@@ -225,7 +204,6 @@ router.delete('/meal-plans/:id', async (req, res) => {
     if (err.message === 'Meal plan not found') {
       return res.status(400).json({ error: 'Meal plan not found' });
     }
-    console.error('Error deleting meal plan:', err);
     res.status(500).json({ error: 'Failed to delete meal plan' });
   }
 });
